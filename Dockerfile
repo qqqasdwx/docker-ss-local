@@ -2,20 +2,19 @@
 # Dockerfile for shadowsocks-libev
 #
 
-FROM alpine
+FROM alpine:latest
 MAINTAINER William Wang <william@10ln.com>
 
-ARG SS_VER=3.2.3
-ARG SS_URL=https://github.com/shadowsocks/shadowsocks-libev/releases/download/v$SS_VER/shadowsocks-libev-$SS_VER.tar.gz
-
+COPY shadowsocks-libev-3.2.3.tar.gz /tmp/shadowsocks-libev-3.2.3.tar.gz
 ENV SERVER_ADDR=
 ENV LOCAL_ADDR 0.0.0.0
-ENV SERVER_PORT 8388
-ENV LOCAL_PORT 8668
+ENV SERVER_PORT 8838
+ENV LOCAL_PORT 8838
 ENV PASSWORD=
 ENV METHOD      aes-256-cfb
-ENV TIMEOUT     300
+ENV TIMEOUT     5
 
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
 RUN set -ex && \
     apk add --no-cache --virtual .build-deps \
                                 autoconf \
@@ -28,9 +27,10 @@ RUN set -ex && \
                                 mbedtls-dev \
                                 pcre-dev \
                                 tar \
+                                c-ares-dev \
                                 udns-dev && \
     cd /tmp && \
-    curl -sSL $SS_URL | tar xz --strip 1 && \
+    tar xzf shadowsocks-libev-3.2.3.tar.gz --strip 1  && \
     ./configure --prefix=/usr --disable-documentation && \
     make install && \
     cd .. && \
