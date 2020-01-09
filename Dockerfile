@@ -9,7 +9,7 @@ COPY shadowsocks-libev-3.2.3.tar.gz /tmp/shadowsocks-libev-3.2.3.tar.gz
 ENV SERVER_ADDR=
 ENV LOCAL_ADDR 0.0.0.0
 ENV SERVER_PORT 8838
-ENV LOCAL_PORT 8838
+ENV LOCAL_PORT 1090
 ENV PASSWORD=
 ENV METHOD      aes-256-cfb
 ENV TIMEOUT     5
@@ -47,14 +47,21 @@ RUN set -ex && \
 
 USER nobody
 
-EXPOSE $LOCAL_PORT/tcp $LOCAL_PORT/udp
+# EXPOSE $LOCAL_PORT/tcp $LOCAL_PORT/udp
 
-CMD ss-local  -s $SERVER_ADDR \
+USER root
+RUN apk add --no-cache privoxy
+RUN sed -i 's!#        forward-socks5t   /               127.0.0.1:9050 .!        forward-socks5t   /               127.0.0.1:1090 .!g' /etc/privoxy/config
+RUN sed -i 's/127.0.0.1:8118/0.0.0.0:1080/' /etc/privoxy/config
+
+EXPOSE 1090/tcp 1090/udp 1080
+
+CMD privoxy --user root /etc/privoxy/config && \
+    ss-local  -s $SERVER_ADDR \
               -p $SERVER_PORT \
               -b $LOCAL_ADDR \
               -l $LOCAL_PORT \
               -k $PASSWORD \
               -m $METHOD \
               -t $TIMEOUT \
-              --fast-open \
               -u
